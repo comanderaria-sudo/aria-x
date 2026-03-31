@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Upgrade from "./pages/Upgrade";
+import OnboardBusiness from "./pages/OnboardBusiness";
 
 function Router() {
   return (
@@ -19,6 +20,13 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/upgrade" component={Upgrade} />
+      <Route path="/onboard">
+        {() => (
+          <ProtectedRoute>
+            <OnboardBusiness />
+          </ProtectedRoute>
+        )}
+      </Route>
       <Route path="/dashboard">
         {() => (
           <ProtectedRoute requirePro={true}>

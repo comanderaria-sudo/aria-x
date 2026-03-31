@@ -9,6 +9,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   subscriptionTier: 'free' | 'pro';
+  isSupabaseAvailable: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,11 +18,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro'>('free');
+  const isSupabaseAvailable = !!supabase;
 
   useEffect(() => {
     // Check if user is logged in on mount
     const checkAuth = async () => {
       try {
+        if (!supabase) {
+          console.warn('[Auth] Supabase not available');
+          setLoading(false);
+          return;
+        }
+
         const { data } = await supabase.auth.getSession();
         setUser(data.session?.user || null);
         
@@ -39,23 +47,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
-        setUser(session?.user || null);
-        if (session?.user) {
-          setSubscriptionTier('free'); // TODO: Fetch from database
-        } else {
-          setSubscriptionTier('free');
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event: any, session: any) => {
+          setUser(session?.user || null);
+          if (session?.user) {
+            setSubscriptionTier('free'); // TODO: Fetch from database
+          } else {
+            setSubscriptionTier('free');
+          }
         }
-      }
-    );
+      );
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+      return () => {
+        subscription?.unsubscribe();
+      };
+    }
   }, []);
 
   const signUp = async (email: string, password: string) => {
+    if (!supabase) {
+      throw new Error('Authentication is not available');
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -65,6 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!supabase) {
+      throw new Error('Authentication is not available');
+    }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -74,12 +90,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!supabase) {
+      throw new Error('Authentication is not available');
+    }
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, subscriptionTier }}>
+    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, subscriptionTier, isSupabaseAvailable }}>
       {children}
     </AuthContext.Provider>
   );
