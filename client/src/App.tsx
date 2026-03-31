@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Upgrade from "./pages/Upgrade";
 import OnboardBusiness from "./pages/OnboardBusiness";
+import Integrations from "./pages/Integrations";
 
 function Router() {
   return (
@@ -24,6 +25,13 @@ function Router() {
         {() => (
           <ProtectedRoute>
             <OnboardBusiness />
+          </ProtectedRoute>
+        )}
+      </Route>
+      <Route path="/integrations">
+        {() => (
+          <ProtectedRoute>
+            <Integrations />
           </ProtectedRoute>
         )}
       </Route>
