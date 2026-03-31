@@ -97,3 +97,44 @@
 - Investor-ready presentation materials
 - Cross-device functionality verified
 - All tasks logged and visible
+
+
+## Phase 9: Early-Access Product Refactor
+
+### Supabase Authentication
+- [ ] Install Supabase client library
+- [ ] Create Supabase auth service (signup, login, logout, session)
+- [ ] Create auth context for session management
+- [ ] Build login page UI
+- [ ] Build signup page UI
+
+### Stripe Integration
+- [ ] Install Stripe client library
+- [ ] Create Stripe subscription service
+- [ ] Create checkout session endpoint
+- [ ] Create webhook handler for subscription events
+- [ ] Store subscription status in database
+
+### UI Components
+- [ ] Add upgrade prompt component
+- [ ] Add subscription status indicator
+- [ ] Add logout button to dashboard
+- [ ] Update navigation with auth state
+
+### Route Protection
+- [ ] Protect /dashboard route (Pro users only)
+- [ ] Redirect unauthenticated users to /login
+- [ ] Redirect free users to upgrade page
+- [ ] Add session persistence on page load
+
+### Deployment
+- [ ] Configure environment variables for production
+- [ ] Set up Vercel deployment
+- [ ] Test build process
+- [ ] Configure PWA for production
+
+### Documentation
+- [ ] Create deployment instructions
+- [ ] Document Supabase setup
+- [ ] Document Stripe setup
+- [ ] Create environment variables guide

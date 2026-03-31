@@ -15,6 +15,13 @@
       "when": 1774979877684,
       "tag": "0001_sweet_mach_iv",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774981048878,
+      "tag": "0002_round_scarecrow",
+      "breakpoints": true
     }
   ]
 }

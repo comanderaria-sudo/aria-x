@@ -1,0 +1,1 @@
+ALTER TABLE `tasks` MODIFY COLUMN `type` enum('find','fix','recover','approve','execute') NOT NULL;

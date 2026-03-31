@@ -21,59 +21,43 @@ export interface MockWatchEvent {
   data: unknown;
 }
 
-// Mock Invoice Data
+// Mock Invoice Data - Realistic small business amounts
 const mockInvoices = [
   {
     id: "INV-2025-001",
     client: "Acme Corp",
-    amount: 15000,
+    amount: 4200,
     dueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     status: "unpaid",
   },
   {
     id: "INV-2025-002",
     client: "TechStart Inc",
-    amount: 8500,
+    amount: 4000,
     dueDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-    status: "unpaid",
-  },
-  {
-    id: "INV-2025-003",
-    client: "Global Solutions",
-    amount: 22000,
-    dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     status: "unpaid",
   },
 ];
 
-// Mock Lead Data
+// Mock Lead Data - Realistic small business deal sizes
 const mockLeads = [
   {
     id: "LEAD-001",
-    company: "Enterprise Systems",
+    company: "Local Services Co",
     contact: "John Smith",
-    email: "john@enterprise.com",
+    email: "john@localservices.com",
     lastContact: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
-    value: 50000,
+    value: 2500,
     status: "no_recent_contact",
   },
   {
     id: "LEAD-002",
-    company: "Digital Innovations",
+    company: "Small Retail Shop",
     contact: "Sarah Johnson",
-    email: "sarah@digital.com",
+    email: "sarah@retail.com",
     lastContact: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-    value: 35000,
+    value: 1000,
     status: "no_recent_contact",
-  },
-  {
-    id: "LEAD-003",
-    company: "Cloud Ventures",
-    contact: "Mike Chen",
-    email: "mike@cloud.com",
-    lastContact: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-    value: 75000,
-    status: "dormant",
   },
 ];
 
@@ -90,12 +74,6 @@ const mockCalendarEvents = [
     title: "Client Call - Acme",
     startTime: new Date(Date.now() + 2.25 * 60 * 60 * 1000),
     endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
-  },
-  {
-    id: "CAL-003",
-    title: "Project Review",
-    startTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
-    endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
   },
 ];
 
@@ -136,7 +114,7 @@ export function generateMockFindings(): MockFinding[] {
     id: nanoid(),
     type: "invoice",
     issue: "Invoice INV-2025-001 from Acme Corp is 30 days overdue",
-    value: 15000,
+    value: 4200,
     confidence: 95,
     recommendedAction: "Send payment reminder email to Acme Corp accounts payable",
     reasoning:
@@ -147,7 +125,7 @@ export function generateMockFindings(): MockFinding[] {
     id: nanoid(),
     type: "invoice",
     issue: "Invoice INV-2025-002 from TechStart Inc is 15 days overdue",
-    value: 8500,
+    value: 4000,
     confidence: 88,
     recommendedAction: "Send polite payment reminder to TechStart Inc",
     reasoning:
@@ -156,20 +134,9 @@ export function generateMockFindings(): MockFinding[] {
 
   findings.push({
     id: nanoid(),
-    type: "invoice",
-    issue: "Invoice INV-2025-003 from Global Solutions due in 5 days",
-    value: 22000,
-    confidence: 92,
-    recommendedAction: "Send proactive payment reminder to Global Solutions",
-    reasoning:
-      "Proactive reminder before due date increases on-time payment probability to 87%.",
-  });
-
-  findings.push({
-    id: nanoid(),
     type: "lead",
-    issue: "Lead LEAD-001 (Enterprise Systems) - No contact for 45 days",
-    value: 50000,
+    issue: "Lead LEAD-001 (Local Services Co) - No contact for 45 days",
+    value: 2500,
     confidence: 85,
     recommendedAction: "Send personalized follow-up email to John Smith",
     reasoning:
@@ -179,12 +146,12 @@ export function generateMockFindings(): MockFinding[] {
   findings.push({
     id: nanoid(),
     type: "lead",
-    issue: "Lead LEAD-003 (Cloud Ventures) - Dormant for 90 days",
-    value: 75000,
+    issue: "Lead LEAD-002 (Small Retail Shop) - No contact for 60 days",
+    value: 1000,
     confidence: 78,
-    recommendedAction: "Schedule discovery call with Mike Chen to re-engage",
+    recommendedAction: "Send check-in email to Sarah Johnson",
     reasoning:
-      "High-value lead dormant for 90 days. Re-engagement call can revive 40% of dormant opportunities.",
+      "Lead has been quiet for 60 days. Quick follow-up can revive interest.",
   });
 
   findings.push({

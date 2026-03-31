@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getUserFindings } from "./db";
+import { createCheckoutSession } from "./stripe-service";
 
 export const appRouter = router({
   system: systemRouter,
@@ -48,6 +49,20 @@ export const appRouter = router({
         const { createAgent } = await import("./agent-loop");
         const agent = createAgent(ctx.user.id, false);
         return agent.execute(input.findingId);
+      }),
+  }),
+
+  stripe: router({
+    checkout: publicProcedure
+      .input((val: unknown) => ({
+        email: (val as any)?.email as string,
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const protocol = ctx.req.protocol || 'https';
+        const host = ctx.req.headers.host || 'localhost:3000';
+        const returnUrl = `${protocol}://${host}/dashboard`;
+        const session = await createCheckoutSession(input.email, returnUrl);
+        return { url: session.url };
       }),
   }),
 });
