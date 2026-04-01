@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase-client';
+import { supabase, isSupabaseEnabled } from '@/lib/supabase-client';
 import type { User } from '@supabase/supabase-js';
 
 type AuthContextType = {
@@ -22,7 +22,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if user is logged in on mount
     const checkAuth = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        if (!isSupabaseEnabled) {
+          // Supabase not configured, skip auth check
+          setLoading(false);
+          return;
+        }
+
+        const { data } = await supabase!.auth.getSession();
         setUser(data.session?.user || null);
         
         // TODO: Fetch subscription tier from database
@@ -39,23 +45,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: any, session: any) => {
-        setUser(session?.user || null);
-        if (session?.user) {
-          setSubscriptionTier('free'); // TODO: Fetch from database
-        } else {
-          setSubscriptionTier('free');
+    if (isSupabaseEnabled && supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event: any, session: any) => {
+          setUser(session?.user || null);
+          if (session?.user) {
+            setSubscriptionTier('free'); // TODO: Fetch from database
+          } else {
+            setSubscriptionTier('free');
+          }
         }
-      }
-    );
+      );
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+      return () => {
+        subscription?.unsubscribe();
+      };
+    }
   }, []);
 
   const signUp = async (email: string, password: string) => {
+    if (!isSupabaseEnabled || !supabase) {
+      throw new Error('Authentication service not configured');
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -65,6 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseEnabled || !supabase) {
+      throw new Error('Authentication service not configured');
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -74,6 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!isSupabaseEnabled || !supabase) {
+      throw new Error('Authentication service not configured');
+    }
+
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
