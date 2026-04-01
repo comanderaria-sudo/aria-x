@@ -1,14 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, isSupabaseEnabled } from '@/lib/supabase-client';
-import type { User } from '@supabase/supabase-js';
+import { trpc } from '@/lib/trpc';
+import type { User } from '@shared/types';
 
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  subscriptionTier: 'free' | 'pro';
+  isAuthenticated: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,90 +13,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [subscriptionTier, setSubscriptionTier] = useState<'free' | 'pro'>('free');
+
+  // Get current user from backend
+  const { data: currentUser, isLoading } = trpc.auth.me.useQuery();
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    const checkAuth = async () => {
-      try {
-        if (!isSupabaseEnabled) {
-          // Supabase not configured, skip auth check
-          setLoading(false);
-          return;
-        }
-
-        const { data } = await supabase!.auth.getSession();
-        setUser(data.session?.user || null);
-        
-        // TODO: Fetch subscription tier from database
-        if (data.session?.user) {
-          setSubscriptionTier('free'); // Default to free for now
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    if (isSupabaseEnabled && supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event: any, session: any) => {
-          setUser(session?.user || null);
-          if (session?.user) {
-            setSubscriptionTier('free'); // TODO: Fetch from database
-          } else {
-            setSubscriptionTier('free');
-          }
-        }
-      );
-
-      return () => {
-        subscription?.unsubscribe();
-      };
+    if (!isLoading) {
+      setUser(currentUser || null);
+      setLoading(false);
     }
-  }, []);
-
-  const signUp = async (email: string, password: string) => {
-    if (!isSupabaseEnabled || !supabase) {
-      throw new Error('Authentication service not configured');
-    }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-  };
-
-  const signIn = async (email: string, password: string) => {
-    if (!isSupabaseEnabled || !supabase) {
-      throw new Error('Authentication service not configured');
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-  };
-
-  const signOut = async () => {
-    if (!isSupabaseEnabled || !supabase) {
-      throw new Error('Authentication service not configured');
-    }
-
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
+  }, [currentUser, isLoading]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut, subscriptionTier }}>
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );

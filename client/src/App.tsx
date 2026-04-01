@@ -21,7 +21,7 @@ function Router() {
       <Route path="/upgrade" component={Upgrade} />
       <Route path="/dashboard">
         {() => (
-          <ProtectedRoute requirePro={true}>
+          <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
         )}

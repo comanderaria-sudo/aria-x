@@ -1,8 +1,9 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, TrendingUp, AlertCircle, CheckCircle2, Clock, ArrowRight, Zap } from "lucide-react";
+import { Loader2, TrendingUp, AlertCircle, CheckCircle2, Clock, ArrowRight, Zap, Upload, Check, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 
 interface ExecutionStep {
@@ -18,10 +19,23 @@ export default function Dashboard() {
   const [isRunning, setIsRunning] = useState(false);
   const [recoveredAmount, setRecoveredAmount] = useState(0);
   const [showRecoveryBanner, setShowRecoveryBanner] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
 
   const runCycleMutation = trpc.agent.runCycle.useMutation();
   const getFindingsQuery = trpc.agent.getFindings.useQuery(undefined, {
     enabled: isAuthenticated,
+  });
+  const uploadCSVMutation = trpc.csv.upload.useMutation({
+    onSuccess: () => {
+      setCsvFile(null);
+      getFindingsQuery.refetch();
+    },
+  });
+  const approveMutation = trpc.findings.approve.useMutation({
+    onSuccess: () => getFindingsQuery.refetch(),
+  });
+  const rejectMutation = trpc.findings.reject.useMutation({
+    onSuccess: () => getFindingsQuery.refetch(),
   });
 
   const findings = getFindingsQuery.data || [];
@@ -29,6 +43,16 @@ export default function Dashboard() {
   const invoiceFindings = findings.filter((f) => f.type === "invoice");
   const leadFindings = findings.filter((f) => f.type === "lead");
   const calendarFindings = findings.filter((f) => f.type === "calendar");
+
+  const handleCSVUpload = async () => {
+    if (!csvFile) return;
+    try {
+      const content = await csvFile.text();
+      await uploadCSVMutation.mutateAsync({ csvContent: content });
+    } catch (error) {
+      console.error('CSV upload error:', error);
+    }
+  };
 
   const handleRunCycle = async () => {
     setIsRunning(true);
@@ -144,6 +168,31 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* CSV Upload */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">Upload Invoices (CSV)</h2>
+            <div className="flex gap-4">
+              <Input
+                type="file"
+                accept=".csv"
+                onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                disabled={uploadCSVMutation.isPending}
+                className="flex-1"
+              />
+              <Button
+                onClick={handleCSVUpload}
+                disabled={!csvFile || uploadCSVMutation.isPending}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {uploadCSVMutation.isPending ? 'Uploading...' : 'Upload'}
+              </Button>
+            </div>
+            <p className="text-sm text-slate-500 mt-2">Format: name/company, amount, due_date</p>
+          </div>
+        </Card>
+
         {/* Recovery Banner */}
         {showRecoveryBanner && (
           <div className="mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-8 text-center">
@@ -278,9 +327,35 @@ export default function Dashboard() {
                       <p className="text-2xl font-bold text-slate-900">${finding.value.toLocaleString()}</p>
                       <p className="text-xs text-slate-500">Confidence: {finding.confidence}%</p>
                     </div>
-                    <Button size="sm" variant="default">
-                      Approve
-                    </Button>
+                    {finding.status === 'pending' && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => approveMutation.mutate({ findingId: finding.id })}
+                          disabled={approveMutation.isPending}
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => rejectMutation.mutate({ findingId: finding.id })}
+                          disabled={rejectMutation.isPending}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {finding.status === 'approved' && (
+                      <span className="text-amber-600 text-sm font-semibold">Approved</span>
+                    )}
+                    {finding.status === 'executed' && (
+                      <span className="text-green-600 text-sm font-semibold">✓ Executed</span>
+                    )}
+                    {finding.status === 'rejected' && (
+                      <span className="text-red-600 text-sm font-semibold">✗ Rejected</span>
+                    )}
                   </div>
                 </div>
               </Card>

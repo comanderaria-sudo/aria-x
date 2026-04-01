@@ -5,22 +5,17 @@ import { Loader2 } from 'lucide-react';
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
-  requirePro?: boolean;
 };
 
-export function ProtectedRoute({ children, requirePro = false }: ProtectedRouteProps) {
-  const { user, loading, subscriptionTier } = useAuth();
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        setLocation('/login');
-      } else if (requirePro && subscriptionTier !== 'pro') {
-        setLocation('/upgrade');
-      }
+    if (!loading && !isAuthenticated) {
+      setLocation('/login');
     }
-  }, [user, loading, subscriptionTier, requirePro, setLocation]);
+  }, [isAuthenticated, loading, setLocation]);
 
   if (loading) {
     return (
@@ -31,10 +26,6 @@ export function ProtectedRoute({ children, requirePro = false }: ProtectedRouteP
   }
 
   if (!user) {
-    return null;
-  }
-
-  if (requirePro && subscriptionTier !== 'pro') {
     return null;
   }
 

@@ -4,6 +4,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { getUserFindings } from "./db";
 import { createCheckoutSession } from "./stripe-service";
+import { parseAndStoreInvoices, validateCSVFormat } from "./csv-upload";
+import { approveFinding, rejectFinding } from "./approval-workflow";
 
 export const appRouter = router({
   system: systemRouter,
@@ -49,6 +51,37 @@ export const appRouter = router({
         const { createAgent } = await import("./agent-loop");
         const agent = createAgent(ctx.user.id, false);
         return agent.execute(input.findingId);
+      }),
+  }),
+
+  csv: router({
+    upload: protectedProcedure
+      .input((val: unknown) => ({
+        csvContent: (val as any)?.csvContent as string,
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!validateCSVFormat(input.csvContent)) {
+          throw new Error('Invalid CSV format. Required columns: name/company, amount, due_date/dueDate');
+        }
+        return parseAndStoreInvoices(input.csvContent, ctx.user.id);
+      }),
+  }),
+
+  findings: router({
+    approve: protectedProcedure
+      .input((val: unknown) => ({
+        findingId: (val as any)?.findingId as string,
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return approveFinding(input.findingId, ctx.user.id);
+      }),
+
+    reject: protectedProcedure
+      .input((val: unknown) => ({
+        findingId: (val as any)?.findingId as string,
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return rejectFinding(input.findingId);
       }),
   }),
 
